@@ -1,0 +1,85 @@
+
+./Lib.hs,44
+module LibLib0,1
+someFunc someFunc12,13
+
+./Vault.hs,488
+data EncryptedVault EncryptedVault16,17
+data EncryptedVault = EncryptedVault { version version16,17
+                                     , nonce nonce17,18
+                                     , ciphertext ciphertext18,19
+data Vault Vault22,23
+data Vault = Vault { padding padding22,23
+                   , entries entries23,24
+new new27,28
+update update30,31
+entryNames entryNames35,36
+getEntry getEntry38,39
+updateEntry updateEntry45,46
+putEntry putEntry48,49
+
+./EncryptedVault.hs,223
+module EncryptedVaultEncryptedVault0,1
+data EncryptedVault = EncryptedVault { version version6,7
+                                     , nonce nonce7,8
+                                     , ciphertext ciphertext8,9
+
+./Entry.hs,2836
+data EncryptedEntry EncryptedEntry22,23
+data EncryptedEntry = EncryptedEntry { nonce nonce22,23
+                                     , counter counter23,24
+                                     , ciphertext ciphertext24,25
+                                     , metadata metadata25,26
+data EntryMetaData EntryMetaData29,30
+data EntryMetaData = EntryMetaData { created_at created_at29,30
+                                   , updated_at updated_at30,31
+                                   , tags tags31,32
+data Entry Entry35,36
+data Entry = Entry { fields fields35,36
+data Field Field38,39
+  DerivedField DerivedField39,40
+  DerivedField { derived_field_counter derived_field_counter39,40
+               , derived_site_name derived_site_name40,41
+               , derived_field_usage derived_field_usage41,42
+  | StoredField StoredField43,44
+  | StoredField { stored_field_data stored_field_data43,44
+                , stored_field_usage stored_field_usage44,45
+data DerivedUsage DerivedUsage48,49
+data DerivedUsage = RawKey RawKey48,49
+data DerivedUsage = RawKey | StoredUsage StoredUsage48,49
+data DerivedUsage = RawKey | StoredUsage | Ed25519UsageEd25519Usage48,49
+data Ed25519Usage = SSH SSH49,50
+data Ed25519Usage = SSH | Signify Signify49,50
+data Ed25519Usage = SSH | Signify | SQRLSQRL49,50
+data StoredUsage = Text Text50,51
+data StoredUsage = Text | PasswordPassword50,51
+data PasswordTemplate PasswordTemplate51,52
+data PasswordTemplate = Maximum Maximum51,52
+data PasswordTemplate = Maximum | Long Long51,52
+data PasswordTemplate = Maximum | Long | Medium Medium51,52
+data PasswordTemplate = Maximum | Long | Medium | Short Short51,52
+data PasswordTemplate = Maximum | Long | Medium | Short | Basic Basic51,52
+data PasswordTemplate = Maximum | Long | Medium | Short | Basic | PinPin51,52
+data Error Error54,55
+data Error = WrongEntriesKeyLengthWrongEntriesKeyLength54,55
+  | WrongEntryNonceLengthWrongEntryNonceLength55,56
+  | WrongOuterNonceLengthWrongOuterNonceLength56,57
+  | WrongOuterKeyLengthWrongOuterKeyLength57,58
+  | WrongDerivedKeyLengthWrongDerivedKeyLength58,59
+  | InappropriateFormatInappropriateFormat59,60
+  | SeedGenerationErrorSeedGenerationError60,61
+  | DecryptionErrorDecryptionError61,62
+  | DataErrorDataError66,67
+  | EntryNotFoundEntryNotFound67,68
+  | NotImplementedNotImplemented68,69
+  | NotAvailableOnPlatformNotAvailableOnPlatform69,70
+  | SSHAgentSocketNotFoundSSHAgentSocketNotFound70,71
+fromByteString fromByteString72,73
+serializeDerivedField serializeDerivedField76,77
+serializeStoredField serializeStoredField79,80
+serializeField serializeField82,83
+serialize serialize89,90
+encrypt encrypt93,94
+decrypt decrypt100,101
+incCounter incCounter104,105
+decCounter decCounter111,112

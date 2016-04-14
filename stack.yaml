@@ -1,0 +1,10 @@
+flags: {}
+extra-package-dbs: []
+packages:
+- '.'
+extra-deps:
+- CBOR-0.1.0.1
+- binary-bits-0.5
+- saltine-0.0.0.4
+- text-1.2.2.0
+resolver: lts-5.1
