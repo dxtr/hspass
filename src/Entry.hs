@@ -3,21 +3,25 @@ module Entry
        ( EncryptedEntry
        , Entry
        , EntryMetaData
-       , decrypt
+       , newEntry
+       , newMetaData
+       , encryptEntry
+       , decryptEntry
        , metadata
        ) where
 
-import Data.Word (Word8, Word16, Word32)
+import Data.Word (Word32)
 import Data.Time.Clock
-import Data.Vector.Storable (Vector)
-import qualified Data.Vector.Storable as Vector
+-- import Data.Vector.Storable (Vector)
+-- import qualified Data.Vector.Storable as Vector
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as Map
 --import Data.ByteString (ByteString)
 --import qualified Data.ByteString as ByteString
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
-import Data.Maybe
+import Data.ByteString.Lazy (toStrict)
+-- import Data.Maybe
 import Data.CBOR
 import Data.Binary.CBOR
 import Data.Binary.Put
@@ -25,15 +29,15 @@ import Data.Binary.Put
 import Crypto.Saltine as Sodium
 
 data EncryptedEntry = EncryptedEntry { nonce :: Sodium.Nonce
-                                     , counter :: Word32
+                                     , ctr :: Word32
                                      , ciphertext :: ByteString.ByteString
                                      , metadata :: EntryMetaData
                                      }
   deriving ()
 
-data EntryMetaData = EntryMetaData { created_at :: UTCTime
-                                   , updated_at :: UTCTime
-                                   , tags :: Vector String
+data EntryMetaData = EntryMetaData { created_at :: Int
+                                   , updated_at :: Int
+                                   , tags :: [String]
                                    }
   deriving ()
 
@@ -74,6 +78,12 @@ data Error = WrongEntriesKeyLength
   | NotAvailableOnPlatform
   | SSHAgentSocketNotFound
 
+newEntry :: Entry
+newEntry = Entry { fields = Map.empty }
+
+newMetaData :: EntryMetaData
+newMetaData = EntryMetaData { created_at = 0, updated_at = 0, tags = [] }
+
 fromByteString :: Maybe ByteString -> Maybe Entry
 fromByteString Nothing = Nothing
 fromByteString (Just rawEntry) = Nothing
@@ -91,42 +101,44 @@ serializeField (DerivedField {derived_field_counter = fieldCounter,
 serializeField (StoredField {stored_field_data = fieldData,
                              stored_field_usage = fieldUsage}) = serializeStoredField fieldData fieldUsage
 
-serializeEntry :: (String, Field) -> (CBOR, CBOR)
-serializeEntry (key, field) = (CBOR_TS(ByteString.pack key), serializeField field)
-
-serialize :: Entry -> CBOR
-serialize entry =
-  CBOR_Map $ map serializeEntry $ Map.toList $ fields entry
+serializeEntry :: Entry -> CBOR
+serializeEntry entry = serializedEntry
+  where mapFunc (key, field) = (CBOR_TS(ByteString.pack key), serializeField field)
+        entryFields = fields entry
+        entryFieldList = Map.toList entryFields
+        mappedFields = map mapFunc entryFieldList
+        serializedEntry = CBOR_Map mappedFields
+        
 --  Map.mapWithKey (\key value -> (CBOR_TS(key),(serializeField value))) $ fields entry
 
-encrypt :: Entry -> Sodium.Key -> IO EncryptedEntry
-encrypt entry key = do
-  newNonce <- Sodium.newNonce
+encryptEntry :: Entry -> Sodium.Key -> IO EncryptedEntry
+encryptEntry entry key = do
+  nNonce <- Sodium.newNonce
+--  currentTime <- getCurrentTime
+  let cipherText = Sodium.secretbox key nNonce byteEntry
   
-  let serializedEntry = serialize entry
-  let cborEntry = putCBOR serializedEntry
-  let putResult = runPutM cborEntry
-  let byteEntry = snd putResult
-  let cipherText = Sodium.secretbox key newNonce byteEntry
-  return EncryptedEntry { nonce = newNonce
-                        , counter = 0
+  return EncryptedEntry { nonce = nNonce
+                        , ctr = 0
                         , ciphertext = cipherText
-                                                  }
+                        , metadata = EntryMetaData { created_at = 0
+                                                   , updated_at = 0
+                                                   , tags = []
+                                                   }
+                        }
 
-decrypt :: EncryptedEntry -> Sodium.Key -> Maybe Entry
-decrypt encEntry key = fromByteString $
+  where serializedEntry = serializeEntry entry
+        cborEntry = putCBOR serializedEntry
+        putResult = runPutM cborEntry
+        byteEntry = toStrict $ snd putResult
+
+decryptEntry :: EncryptedEntry -> Sodium.Key -> Maybe Entry
+decryptEntry encEntry key = fromByteString $
   secretboxOpen key (nonce encEntry) (ciphertext encEntry)
 
 incCounter :: EncryptedEntry -> EncryptedEntry
-incCounter encEntry = EncryptedEntry { nonce = nonce encEntry
-                                        , counter = counter encEntry + 1
-                                        , ciphertext = ciphertext encEntry
-                                        , metadata = metadata encEntry
-                                        }
+incCounter encEntry = encEntry { ctr = newCtr }
+  where newCtr = ctr encEntry + 1
 
 decCounter :: EncryptedEntry -> EncryptedEntry
-decCounter encEntry = EncryptedEntry { nonce = nonce encEntry
-                                        , counter = counter encEntry - 1
-                                        , ciphertext = ciphertext encEntry
-                                        , metadata = metadata encEntry
-                                        }
+decCounter encEntry = encEntry { ctr = ctr encEntry - 1 }
+  where newCtr = ctr encEntry - 1

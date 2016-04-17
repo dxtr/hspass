@@ -1,2 +1,2 @@
 #!/bin/sh
-hasktags --ignore-close-implementation --etags src
+hasktags --ignore-close-implementation --etags .

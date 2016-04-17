@@ -1,6 +1,12 @@
 module Vault
        ( EncryptedVault
        , Vault
+       , newVault
+       , vaultLen
+       , updateEntries
+       , entryNames
+       , getEntry
+       , putEntry
        ) where
 
 import Data.Word (Word8, Word16, Word)
@@ -14,38 +20,61 @@ import Crypto.Saltine as Sodium
 
 import Entry
 
+data Vault = Vault { padding :: ByteString
+                   , entries :: Map String Entry.EncryptedEntry
+                   }
+  deriving ()
+
 data EncryptedVault = EncryptedVault { version :: Word16
                                      , nonce :: Sodium.Nonce
                                      , ciphertext :: ByteString
                                      }
   deriving ()
 
-data Vault = Vault { padding :: ByteString
-                   , entries :: Map String Entry.EncryptedEntry
-                   }
-  deriving ()
 
-new :: Vault
-new = Vault { padding = ByteString.empty, entries = Map.empty }
 
-update :: ByteString -> Map String Entry.EncryptedEntry -> Vault
-update padding entries = Vault { padding = padding
-                               , entries = entries
-                               }
+
+newVault :: Vault
+newVault = Vault { padding = ByteString.empty, entries = Map.empty }
+
+vaultLen :: Vault -> Int
+vaultLen vault = Map.size (entries vault)
+
+-- update :: ByteString -> Map String Entry.EncryptedEntry -> Vault
+-- update padding entries = Vault { padding = padding
+--                                , entries = entries
+--                               }
+
+-- updatePadding :: Vault -> ByteString -> Vault
+-- updatePadding vault newPadding = vault { padding = newPadding }
+
+-- Perhaps this should update the padding too
+-- Or maybe that should be done before or during encryption
+updateEntries :: Vault -> Map String Entry.EncryptedEntry -> Vault
+updateEntries vault newEntries = vault { entries = newEntries }
 
 entryNames :: Vault -> [String]
-entryNames vault = Map.keys (entries vault)
+entryNames vault = vaultEntryKeys
+  where vaultEntries = entries vault
+        vaultEntryKeys = Map.keys vaultEntries
 
-getEntry :: Vault -> Sodium.Key -> String -> Maybe (Maybe Entry.Entry, Entry.EntryMetaData)
-getEntry vault key entry = case Map.lookup entry (entries vault) of
+getEntry :: Vault -> String -> Maybe (EncryptedEntry, EntryMetaData)
+getEntry vault entry = case vaultEntry of
   Nothing -> Nothing
-  Just e -> Just (Entry.decrypt e key, Entry.metadata e)
+  Just e -> Just (e, metadata e)
+  where vaultEntries = entries vault
+        vaultEntry = Map.lookup entry vaultEntries
 --  (Entry.decrypt (Map.lookup entry (entries vault)) key,
 --   Entry.metadata (Map.lookup entry (entries vault)))
 
-updateEntry :: Vault -> Sodium.Key -> String -> (Entry.Entry, Entry.EntryMetaData) -> Maybe Vault
-updateEntry vault key (entry, metadata) =
+-- updateEntry :: Vault -> Sodium.Key -> String -> (Entry.Entry, Entry.EntryMetaData) -> Maybe Vault
+-- updateEntry vault key (entry, metadata) =
 
-putEntry :: Vault -> Sodium.Key -> (Entry.Entry, Entry.EntryMetaData) -> Vault
-putEntry vault key (entry, metadata) =
-  update (padding vault) (entries vault)
+putEntry :: Vault -> String -> EncryptedEntry -> Vault
+putEntry vault entryName entry =
+  updateEntries vault newEntries
+  where
+    oldEntries = entries vault
+    newEntries = Map.insert entryName entry oldEntries
+    
+   
