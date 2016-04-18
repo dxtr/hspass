@@ -14,6 +14,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.List (intercalate)
 
 import Crypto.Saltine as Sodium
 -- xsalsa20poly1305
@@ -31,7 +32,15 @@ data EncryptedVault = EncryptedVault { version :: Word16
                                      }
   deriving ()
 
+instance Show Vault where
+  show (Vault _ vaultEntries)
+    | null entriesList = "Empty vault"
+    | otherwise = intercalate "\n\n" (map entryMapFunc entriesList)
+    where entriesList = Map.toList vaultEntries
+          entryMapFunc (key,entry) = key ++ "\n" ++ show entry
 
+instance Show EncryptedVault where
+  show (EncryptedVault vaultVersion _ _) = "Version: " ++ show vaultVersion
 
 
 newVault :: Vault
@@ -64,8 +73,6 @@ getEntry vault entry = case vaultEntry of
   Just e -> Just (e, metadata e)
   where vaultEntries = entries vault
         vaultEntry = Map.lookup entry vaultEntries
---  (Entry.decrypt (Map.lookup entry (entries vault)) key,
---   Entry.metadata (Map.lookup entry (entries vault)))
 
 -- updateEntry :: Vault -> Sodium.Key -> String -> (Entry.Entry, Entry.EntryMetaData) -> Maybe Vault
 -- updateEntry vault key (entry, metadata) =

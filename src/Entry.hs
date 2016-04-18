@@ -25,6 +25,7 @@ import Data.ByteString.Lazy (toStrict)
 import Data.CBOR
 import Data.Binary.CBOR
 import Data.Binary.Put
+import Data.List (intercalate)
 
 import Crypto.Saltine as Sodium
 
@@ -35,6 +36,9 @@ data EncryptedEntry = EncryptedEntry { nonce :: Sodium.Nonce
                                      }
   deriving ()
 
+instance Show EncryptedEntry where
+  show (EncryptedEntry _ entryCounter _ _) = "Counter: " ++ show entryCounter
+
 data EntryMetaData = EntryMetaData { created_at :: Int
                                    , updated_at :: Int
                                    , tags :: [String]
@@ -43,6 +47,20 @@ data EntryMetaData = EntryMetaData { created_at :: Int
 
 data Entry = Entry { fields :: Map String Field }
   deriving ()
+
+instance Show Entry where
+  show (Entry entryFields)
+    | null fieldsList = "No fields"
+    | otherwise = intercalate "\n" (map fieldMapFunc fieldsList)
+      where fieldsList = Map.toList entryFields
+            fieldMapFunc (key,_) = key
+
+instance Show EntryMetaData where
+  show (EntryMetaData createdAt updatedAt metaTags) = "Created at: " ++ show createdAt ++
+    "\nUpdated at: " ++ show updatedAt ++ "\n" ++ show dataTags
+    where dataTags = if null metaTags then "No tags" else intercalate "," metaTags
+          
+            
 
 data Field =
   DerivedField { derived_field_counter :: Word32
